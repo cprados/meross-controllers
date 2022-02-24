@@ -1,0 +1,50 @@
+# Meross account email
+meross-email: "thisisyouremail@yourdomain.com"
+    
+# Meross account password
+meross-password: "ThisIsYourCrearTextPassword"
+
+# Button controllers configuration
+button-controller:
+
+    -
+        # Name of the Meross device that toggles with the bluetooth button
+        meross-name: "Bedroom Lamp Plug"
+
+        # Bluetooth button device
+        button-device: "/dev/input/event0"
+    -
+        # Name of the Meross device that toggles with the bluetooth button
+        meross-name: "Another Plug"
+
+        # Bluetooth button device
+        button-device: "/dev/input/event1"
+
+# IP controllers configuration
+ip-controller:
+
+    -
+        # Name of the Meross device that toggles with the IP
+        meross-name: "My Home Laptop Plug"
+
+        # IP of the node 
+        ip: "192.168.0.134"
+
+        # Path to the folder with the db of status
+        status-db: "/home/pi/meross-controllers/.status"
+
+        # Number of times a node must be seen offline to consider it off
+        ip-scan-trials: 3
+      
+    - 
+        # Name of the Meross device that toggles with the IP
+        meross-name: "My Work Laptop Plug"
+
+        # IP of the node 
+        ip: "192.168.0.135"
+
+        # Path to the folder with the db of status
+        status-db: "/home/pi/meross-controllers/.status"
+
+        # Number of times a node must be seen offline to consider it off
+        ip-scan-trials: 3
