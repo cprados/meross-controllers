@@ -88,7 +88,8 @@ To check devices and see their names and paths, you should use `evtest`:
 	$ evtest
 
 	Available devices:
-	/dev/input/event0:  Satechi Media Button Keyboard
+        /dev/input/event0:  Logitech Wireless Keyboard PID:4023
+	/dev/input/event1:  Satechi Media Button Keyboard
 
 ##### Configure the controllers to start on boot
 
