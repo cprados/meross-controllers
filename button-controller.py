@@ -17,21 +17,21 @@ import os
 # Global config dictionary
 config = None
 
-def get_keyboard_by_name (keyboard_name): 
+def get_keyboard_by_address (keyboard_address): 
     '''
-    Blocks untill a keyboard with given name is detected. Checks every 0.5 sec.
+    Blocks untill a keyboard with given address is detected. Checks every 0.5 sec.
     Parameters:
-        keyboard_name (str): the name of the keyboard expected
+        keyboard_address (str): the address of the keyboard expected
     Returns:
         result (evdev.device.InputDevice): the device
     '''
     
     result = None
-    logging.info('Waiting for keyboard % to be connected', keyboard_name) 
+    logging.info('Waiting for keyboard % to be connected', keyboard_address) 
     while (result is None):
         for path in evdev.list_devices():
             device = evdev.InputDevice(path)
-            if (device.name == keyboard_name):
+            if (device.uniq == keyboard_address):
                 result = device
         await asyncio.sleep(0.5)
                  
@@ -51,8 +51,7 @@ async def run_controller(node):
 
         try:
             # Wait for keyboard connection
-            # Problem: button names aren't unique neither...
-            keyboard = get_keyboard_by_name (node['button-name'])            
+            keyboard = get_keyboard_by_name (node['button-address'])            
             
             # Keyboard is reconnected. Toggle device as button was pressed
             if keyboard_connected == False:

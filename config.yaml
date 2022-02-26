@@ -11,14 +11,14 @@ button-controller:
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Bedroom Lamp Plug"
 
-        # Bluetooth button device
-        button-device: "/dev/input/event0"
+        # Bluetooth button address
+        button-address: "dc:2c:26:bd:e0:aa"
     -
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Another Plug"
 
         # Bluetooth button device
-        button-device: "/dev/input/event1"
+        button-address: "dc:2c:26:bd:e0:aa"
 
 # IP controllers configuration
 ip-controller:
