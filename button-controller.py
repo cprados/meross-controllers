@@ -16,7 +16,25 @@ import os
 
 # Global config dictionary
 config = None
-     
+
+def get_keyboard_by_name (keyboard_name): 
+    '''
+    Blocks untill a keyboard with given name is detected. Checks every 0.5 sec.
+    Parameters:
+        keyboard_name (str): the name of the keyboard expected
+    Returns:
+        result (evdev.device.InputDevice): the device
+    '''
+    
+    result = None
+    logging.info('Waiting for keyboard % to be connected', keyboard_name) 
+    while (result is None):
+        for path in evdev.list_devices():
+            device = evdev.InputDevice(path)
+            if (device.name == keyboard_name):
+                result = device
+        await asyncio.sleep(0.5)
+                 
 async def run_controller(node):    
     '''
     Runs an instance of a controller for the given node
@@ -25,34 +43,21 @@ async def run_controller(node):
     '''
 
     global config
-    
-    # Checks meross device exists
-    meross_device = meross.meross_get_device (node['meross-name'])
-    if meross_device is None:
-        await meross.meross_disconnect()
-        return 1
-        
+            
     # Tells if keyboard is currently connected. 
     keyboard_connected = True
-    
-    # Tells if it is first time it checks keyboard connection since last disconnection
-    first_keyboard_check = True
 
     while(True):
 
         try:
-            # Wait for keyboard connection (only output first log)
-            if first_keyboard_check == True:
-                first_keyboard_check = False
-                logging.info('Waiting for keyboard connection')                    
-            keyboard = evdev.InputDevice(node['button-device'])
-            first_keyboard_check = True                
+            # Wait for keyboard connection
+            # Problem: button names aren't unique neither...
+            keyboard = get_keyboard_by_name (node['button-name'])            
             
-            # Keyboard is reconnected.   
-            # Toggle device as button was pressed while to reconnect keyboard
+            # Keyboard is reconnected. Toggle device as button was pressed
             if keyboard_connected == False:
                 keyboard_connected = True
-                logging.info('Keyboard reconnected at %s connected',keyboard)
+                logging.info('Keyboard reconnected at %s connected', keyboard)
                 await meross.meross_switch (config, node, "toggle")
             else:
                 logging.info('Keyboard was connected at %s',keyboard)
@@ -67,10 +72,9 @@ async def run_controller(node):
                     logging.info('Waiting for key pressed')
         
         except Exception as e:
+            # Problem: if Exception is in meros_switch and keyboard is connected it will go to an endless loop invoking meros_switch
             keyboard_connected = False
-            if first_keyboard_check == True:
-                logging.info(e)
-            await asyncio.sleep(0.5)               
+            logging.info(e)             
             continue
 
     # Disconnects from meross server if connected
