@@ -67,7 +67,7 @@ $ sudo bluetoothctl
 agent on
 scan on
 ```
-This will then scan for nearby bluetooth devices. If you are lucky, you will see your Media Button show up. Note the device ID and also the name (for later). Once you have seen the device ID, trust and pair it:
+This will then scan for nearby bluetooth devices. If you are lucky, you will see your Media Button show up. Note the device address (for later). Once you have seen the device address, trust and pair it:
 ```
 trust DC:2C:26:BD:E0:AA
 pair DDC:2C:26:BD:E0:AA
@@ -78,15 +78,17 @@ Once it says `Connected`, you can type  `exit` to leave `bluetoothctl`.
 ##### Setup config.yaml configuration file
 In this repo you will find an example `config.yaml` which contains the configuration of two instances of each controller. You can setup from zero to any number of instances of both controllers.
 
-To learn the device names of the Satechi Media Button keyboard you should use `evtest`:
+For the name of the device (meross-name) you should use the same names as in the Meross app.
+
+For the name of the button (button-name) you can use either the name, path under `/dev/input/eventX` or bluetooth address of the button, as printed in `bluetoothctl`.
+
+To check devices and see their names and paths, you should use `evtest`:
 
 	$ sudo apt-get install evtest
 	$ evtest
 
 	Available devices:
 	/dev/input/event0:  Satechi Media Button Keyboard
-
-For the name of the devices you should use the same names as in the app.
 
 ##### Configure the controllers to start on boot
 
@@ -123,14 +125,14 @@ button-controller:
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Bedroom Lamp Plug"
 
-        # Bluetooth button device
-        button-device: "/dev/input/event0"
+        # Button name, address or device path
+        button-name: "DC:2C:26:BD:E0:AA"
     -
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Another Plug"
 
-        # Bluetooth button device
-        button-device: "/dev/input/event1"
+        # Button name, address or device path
+        button-name: "Logitech Wireless Keyboard PID:4023"
 
 # IP controllers configuration
 ip-controller:

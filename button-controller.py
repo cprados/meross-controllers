@@ -4,8 +4,8 @@ button-controller.py: toggles a Meross plug by pressing a bluetooth button
 '''
 
 import logging
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO) 
-logging.getLogger("meross_iot").setLevel(logging.ERROR) 
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+logging.getLogger("meross_iot").setLevel(logging.ERROR)
 
 import argparse
 import yaml
@@ -17,76 +17,90 @@ import os
 # Global config dictionary
 config = None
 
-def get_keyboard_by_address (keyboard_address): 
+async def get_button_by_name (button_name, lock):
     '''
-    Blocks untill a keyboard with given address is detected. Checks every 0.5 sec.
+    Detects when a device with the given name, address or /dev/input/* path is connected
     Parameters:
-        keyboard_address (str): the address of the keyboard expected
+        keyboard_name (str): the name, address or device path of the keyboard
+        lock (bool):
+            true: lock untill keyboard is connected
+            false: check keyboard it is present and return without locking
     Returns:
-        result (evdev.device.InputDevice): the device
+        device (evdev.device.InputDevice): the device or None if lock is false and keyboard is not pressent
     '''
-    
+
     result = None
-    logging.info('Waiting for keyboard % to be connected', keyboard_address) 
-    while (result is None):
+    compare = button_name.lower()
+    while (True):
+
         for path in evdev.list_devices():
             device = evdev.InputDevice(path)
-            if (device.uniq == keyboard_address):
+            if (device.uniq.lower() == compare or device.name.lower() == compare or device.path == compare):
+                logging.info('Button connected: %s %s %s', device.uniq, device.name, device.path)
                 result = device
+                break
+
+        if (not result is None or lock == False):
+            break
+
         await asyncio.sleep(0.5)
-                 
-async def run_controller(node):    
+
+    return result
+
+async def run_controller(node):
     '''
-    Runs an instance of a controller for the given node
+    Runs an instance of a button-controller
     Parameters:
-        node (dict): the node in the config of the device
+        node (dict): the button-controller node in the config dictionary
     '''
 
     global config
-            
-    # Tells if keyboard is currently connected. 
-    keyboard_connected = True
 
-    while(True):
+    # Check if the button is initially connected
+    button_name = node['button-name']
+    logging.info('Checking if button %s is connected', button_name)
+    button = await get_button_by_name (button_name, False)
+
+    while (True):
 
         try:
-            # Wait for keyboard connection
-            keyboard = get_keyboard_by_name (node['button-address'])            
-            
-            # Keyboard is reconnected. Toggle device as button was pressed
-            if keyboard_connected == False:
-                keyboard_connected = True
-                logging.info('Keyboard reconnected at %s connected', keyboard)
-                await meross.meross_switch (config, node, "toggle")
-            else:
-                logging.info('Keyboard was connected at %s',keyboard)
+            # If button is not connected wait for connection
+            if (button is None):
+                logging.info('Waiting for button %s to be connected', button_name)
+                button = await get_button_by_name (button_name, True)
 
-            # Wait for key pressed
-            logging.info('Waiting for key pressed')
-            
-            async for event in keyboard.async_read_loop():
+                # Button reconnected: toggle device as button was pressed
+                await meross.meross_switch (config, node, "toggle")
+
+            # Wait for button pressed
+            logging.info('Waiting for key event on button %s', button_name)
+            async for event in button.async_read_loop():
                 if event.type == evdev.ecodes.EV_KEY and event.value == 0:
-                    logging.info('Key %s pressed', evdev.ecodes.KEY[event.code])
+                    logging.info('Key %s pressed on button %s', evdev.ecodes.KEY[event.code], button_name)
                     await meross.meross_switch (config, node, "toggle")
-                    logging.info('Waiting for key pressed')
-        
+                    logging.info('Waiting for key event on button %s', button_name)
+
+        # Button disconnected while waiting for key pressed
+        except OSError as ose:
+            logging.info("Button %s disconnected: %s", button_name, ose)
+            button = None
+            continue
+
+        # Track other exceptions
         except Exception as e:
-            # Problem: if Exception is in meros_switch and keyboard is connected it will go to an endless loop invoking meros_switch
-            keyboard_connected = False
-            logging.info(e)             
+            logging.info("Other exception: %s, %s", e.__class__.__name__, e)
             continue
 
     # Disconnects from meross server if connected
     await meross.meross_disconnect()
-    return 0
 
 async def main():
     '''
     Main program
     '''
-    
+
     global config
-    
+
     # Connects to meross cloud
     await meross.meross_init (config)
 
@@ -102,17 +116,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Toggles a Meross plug by pressing a bluetooth button')
     parser.add_argument('-c', '--config', type=str, help='Configuration file (yaml)', required=True)
     args = parser.parse_args()
-    
+
     # Processes config file
     with open(args.config) as config_file:
         config = yaml.load(config_file, Loader=yaml.FullLoader)
-    
+
     # Windows and python 3.8 requires to set up a specific event_loop_policy.
     #  On Linux and MacOSX this is not necessary.
     if os.name == 'nt':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())       
-    
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     # Rus as many async io loops as controller nodes defined
     loop = asyncio.get_event_loop()
     loop.create_task(main())
-    loop.run_forever() 
+    loop.run_forever()

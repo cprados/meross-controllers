@@ -11,14 +11,14 @@ button-controller:
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Bedroom Lamp Plug"
 
-        # Bluetooth button address
-        button-address: "dc:2c:26:bd:e0:aa"
+        # Button name, address or device path
+        button-name: "DC:2C:26:BD:E0:AA"
     -
         # Name of the Meross device that toggles with the bluetooth button
         meross-name: "Another Plug"
 
-        # Bluetooth button device
-        button-address: "dc:2c:26:bd:e0:aa"
+        # Button name, address or device path
+        button-name: "Logitech Wireless Keyboard PID:4023"
 
 # IP controllers configuration
 ip-controller:
