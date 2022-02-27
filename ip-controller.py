@@ -14,31 +14,26 @@ import meross
 import os
 import asyncio
 import requests
-import scapy
-import scapy.all as scapy
+import scapy.all
 
 # Global config dictionary
 config = None
 
 def scan_node(ip):
     '''
-    Scans the network for a given IP address.
+    Scans the network for a given IP address ussing arping method.
     Parameters: 
-        ip (str): the ip v4 address
+        ip (str): the ip v4 address or cidr range
     Returns:
         true: IP found
         false: IP not found
     '''
-    arp_req_frame = scapy.ARP(pdst = ip)
-    broadcast_ether_frame = scapy.Ether(dst = "ff:ff:ff:ff:ff:ff")   
-    broadcast_ether_arp_req_frame = broadcast_ether_frame / arp_req_frame
-    answered_list = scapy.srp(broadcast_ether_arp_req_frame, timeout = 2, verbose = False)[0]
-       
-    if len(answered_list)>0:
-        logging.info("IP %s is up", ip)
+    answer=scapy.all.arping(ip, verbose=False, timeout=2)[0]
+    if len(answer)>0:
+        logging.debug("IP %s is up", ip)
         result = True
     else:
-        logging.info("IP %s is down", ip)
+        logging.debug("IP %s is down", ip)
         result = False            
     
     return result 
@@ -83,7 +78,7 @@ def check_update_status (node):
 
         # IP still disconnected
         else:
-            logging.info("IP %s is still disconnected", ip)
+            logging.debug("IP %s is still disconnected", ip)
             return 0
 
     # IP was connected
@@ -95,7 +90,7 @@ def check_update_status (node):
             status_file = open(file_path, "w")
             status_file.write(str(trials))
             status_file.close()
-            logging.info("IP %s is still connected", ip)
+            logging.debug("IP %s is still connected", ip)
             return 2
 
         # IP has disconnected
@@ -115,7 +110,7 @@ def check_update_status (node):
                 status_file.seek(0)
                 status_file.write(str(counter))
                 status_file.close()
-                logging.info("IP %s is still connected", ip)
+                logging.debug("IP %s is still connected", ip)
                 return 2 
 
 async def main():
